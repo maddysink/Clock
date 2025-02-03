@@ -1,0 +1,172 @@
+import React, { useState, useEffect } from 'react';
+import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Bell, Timer, X } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const DigitalClock = () => {
+  const [time, setTime] = useState(new Date());
+  const [alarmTime, setAlarmTime] = useState('');
+  const [isAlarmSet, setIsAlarmSet] = useState(false);
+  const [showAlarm, setShowAlarm] = useState(false);
+  const [isAlarmRinging, setIsAlarmRinging] = useState(false);
+  
+  // Stopwatch states
+  const [stopwatchTime, setStopwatchTime] = useState(0);
+  const [isRunning, setIsRunning] = useState(false);
+  const [showStopwatch, setShowStopwatch] = useState(false);
+
+  // Clock timer
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  // Stopwatch timer
+  useEffect(() => {
+    let interval;
+    if (isRunning) {
+      interval = setInterval(() => {
+        setStopwatchTime(prev => prev + 10);
+      }, 10);
+    }
+    return () => clearInterval(interval);
+  }, [isRunning]);
+
+  // Alarm checker
+  useEffect(() => {
+    if (isAlarmSet) {
+      const currentTime = `${formatNumber(time.getHours())}:${formatNumber(time.getMinutes())}`;
+      if (currentTime === alarmTime) {
+        setIsAlarmRinging(true);
+      }
+    }
+  }, [time, alarmTime, isAlarmSet]);
+
+  const formatNumber = (num) => {
+    return num.toString().padStart(2, '0');
+  };
+
+  const formatStopwatchTime = (ms) => {
+    const minutes = Math.floor(ms / 60000);
+    const seconds = Math.floor((ms % 60000) / 1000);
+    const milliseconds = Math.floor((ms % 1000) / 10);
+    return `${formatNumber(minutes)}:${formatNumber(seconds)}.${formatNumber(milliseconds)}`;
+  };
+
+  const handleAlarmSet = () => {
+    setIsAlarmSet(true);
+    setShowAlarm(false);
+  };
+
+  const handleAlarmStop = () => {
+    setIsAlarmRinging(false);
+    setIsAlarmSet(false);
+    setAlarmTime('');
+  };
+
+  const hours = formatNumber(time.getHours());
+  const minutes = formatNumber(time.getMinutes());
+  const seconds = formatNumber(time.getSeconds());
+  const ampm = time.getHours() >= 12 ? 'PM' : 'AM';
+
+  return (
+    <Card className="bg-pink-50 p-8 rounded-xl shadow-lg w-96">
+      <div className="flex flex-col items-center space-y-4">
+        {/* Main Clock Display */}
+        <div className="text-6xl font-bold font-mono text-pink-600">
+          {hours}:{minutes}:{seconds}
+        </div>
+        <div className="text-2xl font-semibold text-pink-500">
+          {ampm}
+        </div>
+        <div className="text-sm text-pink-400">
+          {time.toLocaleDateString()}
+        </div>
+
+        {/* Control Buttons */}
+        <div className="flex space-x-4">
+          <Button 
+            variant="outline" 
+            className="bg-pink-200 text-pink-700 hover:bg-pink-300"
+            onClick={() => setShowAlarm(!showAlarm)}
+          >
+            <Bell className="w-4 h-4 mr-2" />
+            Alarm
+          </Button>
+          <Button 
+            variant="outline" 
+            className="bg-pink-200 text-pink-700 hover:bg-pink-300"
+            onClick={() => setShowStopwatch(!showStopwatch)}
+          >
+            <Timer className="w-4 h-4 mr-2" />
+            Stopwatch
+          </Button>
+        </div>
+
+        {/* Alarm Section */}
+        {showAlarm && (
+          <div className="w-full space-y-2">
+            <input
+              type="time"
+              value={alarmTime}
+              onChange={(e) => setAlarmTime(e.target.value)}
+              className="w-full p-2 rounded bg-pink-100 text-pink-700 border border-pink-300"
+            />
+            <Button 
+              className="w-full bg-pink-300 hover:bg-pink-400 text-pink-800"
+              onClick={handleAlarmSet}
+              disabled={!alarmTime}
+            >
+              Set Alarm
+            </Button>
+          </div>
+        )}
+
+        {/* Alarm Alert */}
+        {isAlarmRinging && (
+          <Alert className="bg-pink-100 border-pink-300">
+            <AlertDescription className="text-pink-700 flex justify-between items-center">
+              Time to wake up!
+              <Button 
+                size="sm" 
+                className="bg-pink-200 hover:bg-pink-300 text-pink-700"
+                onClick={handleAlarmStop}
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Stopwatch Section */}
+        {showStopwatch && (
+          <div className="w-full space-y-2">
+            <div className="text-3xl font-mono text-pink-500 text-center">
+              {formatStopwatchTime(stopwatchTime)}
+            </div>
+            <div className="flex space-x-2">
+              <Button 
+                className="flex-1 bg-pink-300 hover:bg-pink-400 text-pink-800"
+                onClick={() => setIsRunning(!isRunning)}
+              >
+                {isRunning ? 'Stop' : 'Start'}
+              </Button>
+              <Button 
+                className="flex-1 bg-pink-300 hover:bg-pink-400 text-pink-800"
+                onClick={() => setStopwatchTime(0)}
+                disabled={isRunning}
+              >
+                Reset
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
+
+export default DigitalClock;
